@@ -419,9 +419,29 @@
                                               (collects-relative->path
                                                (image-element-path e))
                                               (image-element-suffixes e) 
-                                              '(".pdf" ".ps" ".png")))])
-                                    (printf "\\includegraphics[scale=~a]{~a}"
-                                            (image-element-scale e) fn))]
+                                              '(".pdf" ".ps" ".png")))]
+                                        [h (cond [(symbol? (image-element-height e))
+                                                  (format "height=\\~a" (image-element-height e))]
+                                                 [(real? (image-element-height e))
+                                                  (format "height=~a" (image-element-height e))]
+                                                 [else ""])]
+                                        [w (cond [(symbol? (image-element-width e))
+                                                  (format "width=\\~a" (image-element-width e))]
+                                                 [(real? (image-element-width e))
+                                                  (format "width=~a" (image-element-width e))]
+                                                 [else ""])])
+                                    (cond [(and (image-element-height e) (image-element-width e))
+                                           (printf "\\includegraphics[~a,~a,keepaspectration=true]{~a}"
+                                                   h w fn)]
+                                          [(image-element-height e)
+                                           (printf "\\includegraphics[~a]{~a}"
+                                                   h fn)]
+                                          [(image-element-width e)
+                                           (printf "\\includegraphics[~a]{~a}"
+                                                   w fn)]
+                                          [else
+                                           (printf "\\includegraphics[scale=~a]{~a}"
+                                                   (image-element-scale e) fn)]))]
                                  [(and (convertible? e)
                                        (not (disable-images))
                                        (let ([ftag (lambda (v suffix [scale 1]) (and v (list v suffix scale)))]

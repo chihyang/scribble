@@ -222,7 +222,9 @@
  [image (->* ((or/c path-string? (cons/c 'collects (listof bytes?))))
              (#:scale real?
                       #:suffixes (listof (and/c string? #rx"^[.]"))
-                      #:style element-style?)
+                      #:style element-style?
+                      #:width (or/c real? symbol? #f)
+                      #:height (or/c real? symbol? #f))
              #:rest (listof content?)
              image-element?)])
 
@@ -295,12 +297,16 @@
                filename-relative-to-source
                #:suffixes [suffixes null]
                #:style [style #f]
+               #:width [width #f]
+               #:height [height #f]
                . alt)
   (make-image-element style
                       (decode-content alt)
                       filename-relative-to-source
                       suffixes
-                      scale))
+                      scale
+                      width
+                      height))
 
 ;; ----------------------------------------
 

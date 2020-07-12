@@ -289,7 +289,9 @@
                                        (cons/c (one-of/c 'collects)
                                                (listof bytes?)))]
                            [suffixes (listof #rx"^[.]")]
-                           [scale real?])]
+                           [scale (or/c real? #f)]
+                           [width (or/c real? symbol? #f)]
+                           [height (or/c real? symbol? #f)])]
  [multiarg-element ([style element-style?]
                     [contents (listof content?)])]
 
