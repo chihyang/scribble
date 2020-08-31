@@ -54,9 +54,9 @@
 
 (define (resolve-get/ext-id* part ri key search-key)
   (let ((real-key
-         (if (pageref-tag? key)
-             (cons 'elem (cdr key))
-             key)))
+         (cond [(pageref-tag? key) (cons 'elem (cdr key))]
+               [(countref-tag? key) (cons 'elem (cdr key))]
+               [else key])))
     (let-values ([(v ext-id) (resolve-get/where part ri real-key)])
       (when ext-id
         (hash-set! (resolve-info-undef ri) (tag-key real-key ri)
@@ -116,6 +116,11 @@
 (define (pageref-tag? x)
   (and (tag? x)
        (equal? (car x) 'page)))
+
+(provide countref-tag?)
+(define (countref-tag? x)
+  (and (tag? x)
+       (equal? (car x) 'countref)))
 
 (provide block?)
 (define (block? p)

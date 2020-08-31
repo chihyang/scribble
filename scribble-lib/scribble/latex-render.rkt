@@ -399,9 +399,16 @@
                                 (not (disable-hyperref))
                                 (let-values ([(dest ext?) (resolve-get/ext? part ri (cons 'elem (cdr (link-element-tag e))))])
                                   (and dest (not ext?))))]
+                 [countref? (and (not part-label?)
+                            (link-element? e)
+                            (countref-tag? (link-element-tag e))
+                            (not (disable-hyperref))
+                            (let-values ([(dest ext?) (resolve-get/ext? part ri (cons 'elem (cdr (link-element-tag e))))])
+                              (and dest (not ext?))))]
                  [hyperref? (and (not part-label?)
                                  (link-element? e)
                                  (not (pageref-tag? (link-element-tag e)))
+                                 (not (countref-tag? (link-element-tag e)))
                                  (not (disable-hyperref))
                                  (let-values ([(dest ext?) (resolve-get/ext? part ri (link-element-tag e))])
                                    (and dest (not ext?))))]
@@ -567,12 +574,16 @@
             (when pageref?
               (printf "\\PageRef{\\pageref{t:~a}}"
                       (t-encode (cons 'elem (cdr (link-element-tag e))))))
+            (when countref?
+              (printf "\\CountRef{t:~a}"
+                      (t-encode (cons 'elem (cdr (link-element-tag e))))))
             (when hyperref?
               (printf "\\hyperref[t:~a]{"
                       (t-encode (link-element-tag e))))
             (let loop ([l (if style (style-properties style) null)] [tt? #f])
               (if (null? l)
                   (cond [pageref? (void)]
+                        [countref? (void)]
                         [hyperref? (parameterize ([disable-hyperref #t])
                                      (finish tt?))]
                         [else (finish tt?)])
