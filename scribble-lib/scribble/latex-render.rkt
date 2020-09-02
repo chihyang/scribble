@@ -1116,7 +1116,9 @@
                      [(#\') "{\\textquotesingle}"]
                      [(#\? #\! #\. #\:)
                       (if (rendering-tt) (format "{\\hbox{\\texttt{~a}}}" c) c)]
-                     [(#\~) "$\\sim$"]
+                     [(#\~) (if (rendering-tt)
+                                "{\\textasciitilde}"
+                                "$\\sim$")]
                      [(#\{ #\}) (if (rendering-tt)
                                     (format "{\\char`\\~a}" c)
                                     (format "\\~a" c))]
