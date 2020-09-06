@@ -196,7 +196,7 @@
                        (let ([d (render-part-depth)])
                          (and d (positive? d)))))
           (when (eq? (style-name (part-style d)) 'index)
-            (printf "\\twocolumn\n\\parskip=0pt\n\\addcontentsline{toc}{section}{Index}\n"))
+            (printf "\\twocolumn\n\\parskip=0pt\n"))
           (let ([pres (extract-pretitle-content d)])
             (for ([pre (in-list pres)])
               (printf "\n\n")
