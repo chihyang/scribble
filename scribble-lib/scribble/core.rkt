@@ -53,11 +53,15 @@
   (resolve-get/ext-id* part ri key #f))
 
 (define (resolve-get/ext-id* part ri key search-key)
-  (let-values ([(v ext-id) (resolve-get/where part ri key)])
-    (when ext-id
-      (hash-set! (resolve-info-undef ri) (tag-key key ri) 
-                 (if v 'found search-key)))
-    (values v ext-id)))
+  (let ((real-key
+         (cond [(pageref-tag? key) (cons 'elem (cdr key))]
+               [(countref-tag? key) (cons 'elem (cdr key))]
+               [else key])))
+    (let-values ([(v ext-id) (resolve-get/where part ri real-key)])
+      (when ext-id
+        (hash-set! (resolve-info-undef ri) (tag-key real-key ri)
+                   (if v 'found search-key)))
+      (values v ext-id))))
 
 (define (resolve-get part ri key)
   (resolve-get* part ri key #f))
@@ -107,6 +111,16 @@
                 (list? (cadr s))
                 (serializable? (cadr s))))
        (null? (cddr s))))
+
+(provide pageref-tag?)
+(define (pageref-tag? x)
+  (and (tag? x)
+       (equal? (car x) 'page)))
+
+(provide countref-tag?)
+(define (countref-tag? x)
+  (and (tag? x)
+       (equal? (car x) 'countref)))
 
 (provide block?)
 (define (block? p)
@@ -280,7 +294,9 @@
                                        (cons/c (one-of/c 'collects)
                                                (listof bytes?)))]
                            [suffixes (listof #rx"^[.]")]
-                           [scale real?])]
+                           [scale (or/c real? #f)]
+                           [width (or/c real? symbol? #f)]
+                           [height (or/c real? symbol? #f)])]
  [multiarg-element ([style element-style?]
                     [contents (listof content?)])]
 

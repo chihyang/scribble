@@ -196,7 +196,7 @@
                        (let ([d (render-part-depth)])
                          (and d (positive? d)))))
           (when (eq? (style-name (part-style d)) 'index)
-            (printf "\\twocolumn\n\\parskip=0pt\n\\addcontentsline{toc}{section}{Index}\n"))
+            (printf "\\twocolumn\n\\parskip=0pt\n"))
           (let ([pres (extract-pretitle-content d)])
             (for ([pre (in-list pres)])
               (printf "\n\n")
@@ -341,7 +341,7 @@
         (parameterize ([done-link-page-numbers (or (done-link-page-numbers)
                                                    (link-element? e))])
           (when (target-element? e)
-            (printf "\\label{t:~a}"
+            (printf "\\phantomsection\\label{t:~a}"
                     (t-encode (add-current-tag-prefix (tag-key (target-element-tag e) ri)))))
           (when part-label?
             (define-values (dest ext?) (resolve-get/ext? part ri (link-element-tag e)))
@@ -393,8 +393,22 @@
                                  (style-name es)
                                  es)]
                  [style (and (style? es) es)]
+                 [pageref? (and (not part-label?)
+                                (link-element? e)
+                                (pageref-tag? (link-element-tag e))
+                                (not (disable-hyperref))
+                                (let-values ([(dest ext?) (resolve-get/ext? part ri (cons 'elem (cdr (link-element-tag e))))])
+                                  (and dest (not ext?))))]
+                 [countref? (and (not part-label?)
+                            (link-element? e)
+                            (countref-tag? (link-element-tag e))
+                            (not (disable-hyperref))
+                            (let-values ([(dest ext?) (resolve-get/ext? part ri (cons 'elem (cdr (link-element-tag e))))])
+                              (and dest (not ext?))))]
                  [hyperref? (and (not part-label?)
                                  (link-element? e)
+                                 (not (pageref-tag? (link-element-tag e)))
+                                 (not (countref-tag? (link-element-tag e)))
                                  (not (disable-hyperref))
                                  (let-values ([(dest ext?) (resolve-get/ext? part ri (link-element-tag e))])
                                    (and dest (not ext?))))]
@@ -412,9 +426,29 @@
                                               (collects-relative->path
                                                (image-element-path e))
                                               (image-element-suffixes e) 
-                                              '(".pdf" ".ps" ".png")))])
-                                    (printf "\\includegraphics[scale=~a]{~a}"
-                                            (image-element-scale e) fn))]
+                                              '(".pdf" ".ps" ".png")))]
+                                        [h (cond [(symbol? (image-element-height e))
+                                                  (format "height=\\~a" (image-element-height e))]
+                                                 [(real? (image-element-height e))
+                                                  (format "height=~a" (image-element-height e))]
+                                                 [else ""])]
+                                        [w (cond [(symbol? (image-element-width e))
+                                                  (format "width=\\~a" (image-element-width e))]
+                                                 [(real? (image-element-width e))
+                                                  (format "width=~a" (image-element-width e))]
+                                                 [else ""])])
+                                    (cond [(and (image-element-height e) (image-element-width e))
+                                           (printf "\\includegraphics[~a,~a,keepaspectration=true]{~a}"
+                                                   h w fn)]
+                                          [(image-element-height e)
+                                           (printf "\\includegraphics[~a]{~a}"
+                                                   h fn)]
+                                          [(image-element-width e)
+                                           (printf "\\includegraphics[~a]{~a}"
+                                                   w fn)]
+                                          [else
+                                           (printf "\\includegraphics[scale=~a]{~a}"
+                                                   (image-element-scale e) fn)]))]
                                  [(and (convertible? e)
                                        (not (disable-images))
                                        (let ([ftag (lambda (v suffix [scale 1]) (and v (list v suffix scale)))]
@@ -537,15 +571,25 @@
                 (wrap e style-name 'exact)]
                [else
                 (core-render e tt?)]))
+            (when pageref?
+              (printf "\\PageRef{\\pageref{t:~a}}"
+                      (t-encode (cons 'elem (cdr (link-element-tag e))))))
+            (when countref?
+              (let ((e-t (t-encode (cons 'elem (cdr (link-element-tag e))))))
+                (if (and (string? style-name)
+                         (findf tex-addition? (if style (style-properties style) '())))
+                    (printf "\\~a{t:~a}" style-name e-t)
+                    (printf "\\CountRef{t:~a}" e-t))))
             (when hyperref?
               (printf "\\hyperref[t:~a]{"
                       (t-encode (link-element-tag e))))
             (let loop ([l (if style (style-properties style) null)] [tt? #f])
               (if (null? l)
-                  (if hyperref?
-                      (parameterize ([disable-hyperref #t])
-                        (finish tt?))
-                      (finish tt?))
+                  (cond [pageref? (void)]
+                        [countref? (void)]
+                        [hyperref? (parameterize ([disable-hyperref #t])
+                                     (finish tt?))]
+                        [else (finish tt?)])
                   (let ([v (car l)])
                     (cond
                      [(target-url? v)
@@ -1075,7 +1119,9 @@
                      [(#\') "{\\textquotesingle}"]
                      [(#\? #\! #\. #\:)
                       (if (rendering-tt) (format "{\\hbox{\\texttt{~a}}}" c) c)]
-                     [(#\~) "$\\sim$"]
+                     [(#\~) (if (rendering-tt)
+                                "{\\textasciitilde}"
+                                "$\\sim$")]
                      [(#\{ #\}) (if (rendering-tt)
                                     (format "{\\char`\\~a}" c)
                                     (format "\\~a" c))]

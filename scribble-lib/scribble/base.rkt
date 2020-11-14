@@ -222,7 +222,9 @@
  [image (->* ((or/c path-string? (cons/c 'collects (listof bytes?))))
              (#:scale real?
                       #:suffixes (listof (and/c string? #rx"^[.]"))
-                      #:style element-style?)
+                      #:style element-style?
+                      #:width (or/c real? symbol? #f)
+                      #:height (or/c real? symbol? #f))
              #:rest (listof content?)
              image-element?)])
 
@@ -295,12 +297,16 @@
                filename-relative-to-source
                #:suffixes [suffixes null]
                #:style [style #f]
+               #:width [width #f]
+               #:height [height #f]
                . alt)
   (make-image-element style
                       (decode-content alt)
                       filename-relative-to-source
                       suffixes
-                      scale))
+                      scale
+                      width
+                      height))
 
 ;; ----------------------------------------
 
@@ -561,6 +567,12 @@
                 (#:underline? any/c)
                 #:rest (listof pre-content?)
                 element?)]
+  [pageref (->* ((or/c taglet? generated-tag?))
+                (#:underline? any/c)
+                element?)]
+  [countref (->* ((or/c taglet? generated-tag?))
+                 (#:style element-style?)
+                 element?)]
   [secref (->* (string?)
                (#:doc (or/c #f module-path?)
                 #:tag-prefixes (or/c #f (listof string?))
@@ -589,6 +601,12 @@
   (make-target-element #f (decode-content body) `(elem ,t)))
 (define (elemref #:underline? [u? #t] t . body)
   (make-link-element (if u? #f "plainlink") (decode-content body) `(elem ,t)))
+
+(define (pageref t #:underline? [u? #t])
+  (make-link-element (if u? #f "plainlink") null `(page ,t)))
+
+(define (countref t #:style [link-style #f])
+  (make-link-element link-style null `(countref ,t)))
 
 (define (secref s #:underline? [u? #t] #:doc [doc #f] #:tag-prefixes [prefix #f]
                 #:link-render-style [link-style #f])
@@ -773,7 +791,7 @@
  [index* (((listof string?) (listof any/c)) ()  #:rest (listof pre-content?) . ->* . index-element?)] ; XXX first any/c wrong in docs 
  [as-index (() () #:rest (listof pre-content?) . ->* . index-element?)]
  [section-index (() () #:rest (listof string?) . ->* . part-index-decl?)]
- [index-section (() (#:tag (or/c false/c string?)) . ->* . part?)])
+ [index-section (() (#:title (or/c string? (listof string?)) #:tag (or/c false/c string?)) . ->* . part?)])
 
 (define (section-index . elems)
   (make-part-index-decl (map content->string elems) elems))
