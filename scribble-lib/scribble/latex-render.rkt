@@ -575,8 +575,11 @@
               (printf "\\PageRef{\\pageref{t:~a}}"
                       (t-encode (cons 'elem (cdr (link-element-tag e))))))
             (when countref?
-              (printf "\\CountRef{t:~a}"
-                      (t-encode (cons 'elem (cdr (link-element-tag e))))))
+              (let ((e-t (t-encode (cons 'elem (cdr (link-element-tag e))))))
+                (if (and (string? style-name)
+                         (findf tex-addition? (if style (style-properties style) '())))
+                    (printf "\\~a{t:~a}" style-name e-t)
+                    (printf "\\CountRef{t:~a}" e-t))))
             (when hyperref?
               (printf "\\hyperref[t:~a]{"
                       (t-encode (link-element-tag e))))

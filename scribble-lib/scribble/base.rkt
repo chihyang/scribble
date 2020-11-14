@@ -571,7 +571,7 @@
                 (#:underline? any/c)
                 element?)]
   [countref (->* ((or/c taglet? generated-tag?))
-                 (#:underline? any/c)
+                 (#:style element-style?)
                  element?)]
   [secref (->* (string?)
                (#:doc (or/c #f module-path?)
@@ -605,8 +605,8 @@
 (define (pageref t #:underline? [u? #t])
   (make-link-element (if u? #f "plainlink") null `(page ,t)))
 
-(define (countref t #:underline? [u? #t])
-  (make-link-element (if u? #f "plainlink") null `(countref ,t)))
+(define (countref t #:style [link-style #f])
+  (make-link-element link-style null `(countref ,t)))
 
 (define (secref s #:underline? [u? #t] #:doc [doc #f] #:tag-prefixes [prefix #f]
                 #:link-render-style [link-style #f])
